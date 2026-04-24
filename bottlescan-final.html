@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>BottleScan</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #F8F6F2;
+    --surface: #FFFFFF;
+    --primary: #1A1A2E;
+    --accent: #C5973A;
+    --accent-light: #F2DFA8;
+    --accent-pale: #FDF6E3;
+    --text: #1C1410;
+    --muted: #8A7E78;
+    --border: #E8E0D8;
+    --success: #2ecc71;
+    --radius: 20px;
+
+    /* drink type colors */
+    --wine: #7B1D2E;
+    --whisky: #8B4513;
+    --beer: #D4A017;
+    --sake: #C8A882;
+    --soju: #4A90A4;
+    --makgeolli: #C8B89A;
+    --rum: #6B2D0E;
+    --gin: #2E7D52;
+    --other: #555;
+  }
+
+  html, body { height: 100%; width: 100%; background: var(--bg); font-family: 'DM Sans', sans-serif; color: var(--text); overflow-x: hidden; }
+
+  .app { width: 100%; max-width: 430px; margin: 0 auto; min-height: 100dvh; display: flex; flex-direction: column; overflow-x: hidden; }
+
+  /* ── Header ── */
+  .header { padding: calc(clamp(18px,5vh,40px) + env(safe-area-inset-top, 0px)) clamp(14px,4vw,24px) clamp(12px,3vh,22px); text-align: center; }
+  .header-label { font-size: 10px; letter-spacing: 0.3em; color: var(--accent); text-transform: uppercase; font-weight: 600; margin-bottom: 6px; }
+  .header-title { font-family: 'Playfair Display', serif; font-size: clamp(26px,7vw,38px); font-weight: 900; color: var(--primary); line-height: 1; letter-spacing: -0.02em; }
+  .header-title span { color: var(--accent); }
+  .header-sub { font-size: clamp(11px,2.8vw,13px); color: var(--muted); margin-top: 6px; font-weight: 300; }
+
+  /* ── Home ── */
+  #screen-home { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 0 clamp(14px,4vw,24px) clamp(20px,5vh,40px); }
+
+  .bottle-illustration { width: clamp(80px,22vw,110px); height: auto; margin: 0 auto clamp(16px,4vw,28px); filter: drop-shadow(0 8px 24px rgba(90,16,32,0.22)); }
+  .bottle-illustration svg { width: 100%; height: 100%; }
+
+  .scan-btn {
+    width: 100%; max-width: 320px; padding: clamp(14px,4vw,20px);
+    background: var(--primary); color: #fff; border: none; border-radius: var(--radius);
+    font-family: 'DM Sans', sans-serif; font-size: 17px; font-weight: 600;
+    font-size: clamp(14px,4vw,17px); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px;
+    box-shadow: 0 8px 32px rgba(26,26,46,0.3); transition: all 0.2s; position: relative; overflow: hidden;
+  }
+  .scan-btn::before { content: ''; position: absolute; inset: 0; background: linear-gradient(135deg, rgba(255,255,255,0.12) 0%, transparent 60%); }
+  .scan-btn:hover { transform: translateY(-2px); box-shadow: 0 12px 40px rgba(26,26,46,0.4); }
+  .scan-btn:active { transform: translateY(0); }
+
+  .hint { margin-top: 18px; text-align: center; font-size: 12px; color: var(--muted); line-height: 1.7; }
+  .hint strong { color: var(--primary); font-weight: 600; }
+
+  .divider { width: 40px; height: 2px; background: var(--accent-light); border-radius: 2px; margin: 22px auto; }
+
+  .manual-section { width: 100%; max-width: 320px; }
+  .manual-label { font-size: 11px; font-weight: 600; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 8px; text-align: center; }
+  .manual-row { display: flex; gap: 8px; }
+  .manual-input {
+    flex: 1; padding: 12px 16px; border: 1.5px solid var(--border);
+    border-radius: 12px; font-family: 'DM Sans', sans-serif; font-size: 14px;
+    outline: none; background: var(--surface); color: var(--text); transition: border-color 0.2s;
+  }
+  .manual-input:focus { border-color: var(--primary); }
+  .manual-btn {
+    padding: 12px 18px; background: var(--accent); color: #fff; border: none;
+    border-radius: 12px; font-family: 'DM Sans', sans-serif; font-size: 13px;
+    font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s;
+  }
+  .manual-btn:hover { background: #a87d2e; }
+
+
+  /* ── Scan Counter ── */
+  .scan-counter {
+    display: flex; align-items: center; gap: 8px;
+    margin-top: 10px; font-size: 11px; color: var(--muted);
+    justify-content: center; font-weight: 500;
+  }
+  .counter-bar-wrap {
+    width: 80px; height: 4px; background: var(--border);
+    border-radius: 4px; overflow: hidden;
+  }
+  .counter-bar {
+    height: 100%; border-radius: 4px;
+    background: linear-gradient(90deg, var(--accent), #e8a020);
+    transition: width 0.4s ease;
+    width: 0%;
+  }
+  .counter-bar.warning { background: linear-gradient(90deg, #e67e22, #e74c3c); }
+
+  /* ── Limit screen ── */
+  #screen-limit {
+    display: none; flex: 1; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 40px 24px; text-align: center;
+  }
+  .limit-icon { font-size: 56px; }
+  .limit-title { font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 700; color: var(--primary); margin-top: 16px; }
+  .limit-msg { font-size: 13px; color: var(--muted); margin-top: 10px; line-height: 1.7; }
+  .limit-reset { font-size: 12px; color: var(--accent); font-weight: 600; margin-top: 8px; }
+  .limit-bar-wrap { width: 200px; height: 8px; background: var(--border); border-radius: 8px; margin: 20px auto 0; overflow: hidden; }
+  .limit-bar-fill { height: 100%; width: 100%; background: linear-gradient(90deg, #e67e22, #e74c3c); border-radius: 8px; }
+
+  /* ── Scanner ── */
+  #screen-scanner { display: none; flex-direction: column; flex: 1; }
+  .scanner-header { display: flex; align-items: center; padding: 20px 20px 12px; gap: 12px; }
+  .back-btn {
+    width: 38px; height: 38px; border-radius: 50%; border: 1.5px solid var(--border);
+    background: var(--surface); cursor: pointer; display: flex; align-items: center;
+    justify-content: center; font-size: 16px; color: var(--text); flex-shrink: 0; transition: all 0.2s;
+  }
+  .back-btn:hover { background: #f0f0f8; border-color: var(--primary); }
+  .scanner-title { font-family: 'Playfair Display', serif; font-size: 18px; font-weight: 700; color: var(--primary); }
+
+  .camera-wrap {
+    margin: 0 clamp(12px,4vw,20px); border-radius: var(--radius); overflow: hidden;
+    position: relative; background: #000;
+    width: calc(100% - clamp(24px,8vw,40px));
+    aspect-ratio: 1;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.2);
+  }
+  #qr-reader { width: 100% !important; border: none !important; }
+  #qr-reader video { border-radius: var(--radius); }
+  #qr-reader img { display: none !important; }
+  #qr-reader__scan_region { border: none !important; }
+  #qr-reader__dashboard { display: none !important; }
+
+  .scan-overlay { position: absolute; inset: 0; pointer-events: none; border-radius: var(--radius); }
+  .scan-flash {
+    position: absolute; inset: 0; background: rgba(255,255,255,0.85);
+    border-radius: var(--radius); opacity: 0; pointer-events: none; z-index: 10;
+  }
+  .scan-flash.active { animation: flash 0.5s ease-out forwards; }
+  @keyframes flash { 0% { opacity: 0.9; } 100% { opacity: 0; } }
+
+  .scan-success-banner {
+    position: absolute; bottom: 16px; left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: linear-gradient(135deg, #2ecc71, #27ae60);
+    color: #fff; padding: 10px 22px; border-radius: 30px;
+    font-size: 14px; font-weight: 700; white-space: nowrap;
+    opacity: 0; pointer-events: none; z-index: 11;
+    box-shadow: 0 4px 16px rgba(46,204,113,0.5);
+    display: flex; align-items: center; gap: 6px;
+  }
+  .scan-success-banner.active { animation: bannerPop 0.6s cubic-bezier(0.34,1.56,0.64,1) forwards; }
+  @keyframes bannerPop {
+    0%   { opacity: 0; transform: translateX(-50%) translateY(20px); }
+    60%  { opacity: 1; transform: translateX(-50%) translateY(-4px); }
+    100% { opacity: 1; transform: translateX(-50%) translateY(0); }
+  }
+
+  .scan-line {
+    position: absolute; left: 15%; right: 15%; height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent), #fff, var(--accent), transparent);
+    animation: scanline 2s ease-in-out infinite;
+    box-shadow: 0 0 8px rgba(197,151,58,0.8);
+  }
+  @keyframes scanline { 0% { top: 20%; opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { top: 80%; opacity: 0; } }
+
+  .corner { position: absolute; width: 28px; height: 28px; border-color: var(--accent); border-style: solid; border-width: 0; transition: border-color 0.3s; }
+  .corner-tl { top: 12%; left: 12%; border-top-width: 3px; border-left-width: 3px; border-radius: 4px 0 0 0; }
+  .corner-tr { top: 12%; right: 12%; border-top-width: 3px; border-right-width: 3px; border-radius: 0 4px 0 0; }
+  .corner-bl { bottom: 12%; left: 12%; border-bottom-width: 3px; border-left-width: 3px; border-radius: 0 0 0 4px; }
+  .corner-br { bottom: 12%; right: 12%; border-bottom-width: 3px; border-right-width: 3px; border-radius: 0 0 4px 0; }
+  .corner.success { border-color: var(--success) !important; }
+
+  .scanner-hint { text-align: center; margin: 16px 20px 0; font-size: 13px; color: var(--muted); line-height: 1.6; }
+
+  /* ── Loading ── */
+  #screen-loading { display: none; flex: 1; flex-direction: column; align-items: center; justify-content: center; padding: 40px 24px; text-align: center; }
+  .loading-bottle { font-size: 64px; animation: float 2s ease-in-out infinite; }
+  @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
+  .loading-text { font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 700; color: var(--primary); margin-top: 20px; }
+  .loading-sub { font-size: 13px; color: var(--muted); margin-top: 8px; }
+  .loading-bar { width: 200px; height: 3px; background: var(--border); border-radius: 3px; margin-top: 24px; overflow: hidden; }
+  .loading-bar-inner { height: 100%; background: linear-gradient(90deg, var(--primary), var(--accent)); border-radius: 3px; animation: loadbar 1.5s ease-in-out infinite; }
+  @keyframes loadbar { 0% { width: 0%; margin-left: 0; } 50% { width: 70%; margin-left: 15%; } 100% { width: 0%; margin-left: 100%; } }
+
+  /* ── Result ── */
+  #screen-result { display: none; flex-direction: column; flex: 1; overflow-y: auto; }
+  .result-header { display: flex; align-items: center; padding: 20px 20px 0; gap: 12px; }
+
+  .result-hero {
+    margin: clamp(10px,3vw,16px) clamp(12px,4vw,20px) 0; border-radius: var(--radius);
+    padding: clamp(16px,4vw,24px); color: #fff; position: relative; overflow: hidden;
+  }
+  .result-hero::before { content: ''; position: absolute; inset: 0; background: linear-gradient(135deg, rgba(255,255,255,0.12) 0%, transparent 60%); }
+  .result-hero-emoji { position: absolute; right: -8px; top: -8px; font-size: 90px; opacity: 0.15; transform: rotate(10deg); }
+
+  .result-type-badge {
+    display: inline-block; padding: 3px 12px; background: rgba(255,255,255,0.2);
+    border-radius: 20px; font-size: 11px; font-weight: 600; letter-spacing: 0.08em; margin-bottom: 10px;
+  }
+  .result-name { font-family: 'Playfair Display', serif; font-size: clamp(18px,5.5vw,24px); font-weight: 900; line-height: 1.2; margin-bottom: 4px; }
+  .result-sub { font-size: 13px; opacity: 0.75; margin-bottom: 16px; }
+  .result-score { display: flex; align-items: center; gap: 8px; }
+  .stars { font-size: 16px; letter-spacing: 1px; }
+  .score-num { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 700; }
+
+  .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(8px,2vw,12px); margin: clamp(10px,3vw,16px) clamp(12px,4vw,20px) 0; }
+  .info-card { background: var(--surface); border-radius: 14px; padding: 14px; border: 1px solid var(--border); }
+  .info-card.wide { grid-column: 1 / -1; }
+  .info-card-label { font-size: 10px; font-weight: 700; color: var(--accent); letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 5px; }
+  .info-card-value { font-size: 14px; font-weight: 600; color: var(--text); line-height: 1.4; }
+  .info-card-value.price { font-family: 'Playfair Display', serif; font-size: 18px; color: var(--primary); }
+  .price-note { font-size: 10px; color: #bbb; margin-top: 3px; }
+
+  .section { margin: clamp(10px,3vw,16px) clamp(12px,4vw,20px) 0; background: var(--surface); border-radius: var(--radius); padding: clamp(14px,4vw,18px); border: 1px solid var(--border); }
+  .section-title { font-size: 11px; font-weight: 700; color: var(--accent); letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+  .section-body { font-size: 14px; color: #444; line-height: 1.75; }
+
+  .pairing-list { display: flex; flex-wrap: wrap; gap: 8px; }
+  .pairing-chip { padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+
+  .scan-again-btn {
+    margin: clamp(12px,3vw,20px) clamp(12px,4vw,20px) clamp(24px,6vw,40px); width: calc(100% - clamp(24px,8vw,40px)); padding: clamp(14px,4vw,18px);
+    background: var(--primary); color: #fff; border: none; border-radius: var(--radius);
+    font-family: 'DM Sans', sans-serif; font-size: 16px; font-weight: 600;
+    cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
+    box-shadow: 0 6px 24px rgba(26,26,46,0.25); transition: all 0.2s;
+  }
+  .scan-again-btn:hover { transform: translateY(-1px); }
+
+  .barcode-tag { text-align: center; padding: 8px 0 0; font-size: 11px; color: #ccc; font-family: monospace; letter-spacing: 0.05em; }
+
+  /* ── Error ── */
+  #screen-error { display: none; flex: 1; flex-direction: column; align-items: center; justify-content: center; padding: 40px 24px; text-align: center; }
+  .error-icon { font-size: 56px; }
+  .error-title { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 700; color: var(--primary); margin-top: 16px; }
+  .error-msg { font-size: 13px; color: var(--muted); margin-top: 8px; line-height: 1.6; }
+  .retry-btn { margin-top: 24px; padding: 14px 32px; background: var(--primary); color: #fff; border: none; border-radius: 12px; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ══ HOME ══ -->
+  <div id="screen-home" style="display:flex; flex-direction:column;">
+    <div class="header">
+      <div class="header-label">Drink Scanner</div>
+      <div class="header-title">Bottle<span>Scan</span></div>
+      <div class="header-sub">모든 술병 바코드를 스캔하면 정보를 알려드려요</div>
+
+      <div class="scan-counter" id="scan-counter">
+        <span id="counter-used">0</span> / 150회 사용
+        <span class="counter-bar-wrap"><span class="counter-bar" id="counter-bar"></span></span>
+      </div>
+    </div>
+
+    <div style="flex:1; display:flex; flex-direction:column; align-items:center; padding: 0 24px 40px;">
+      <!-- Illustration -->
+      <div class="bottle-illustration">
+<svg viewBox="0 0 160 240" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- 코르크 -->
+    <rect x="68" y="2" width="24" height="14" rx="4" fill="#C8A97A"/>
+    <rect x="70" y="4" width="20" height="2" rx="1" fill="rgba(255,255,255,0.3)"/>
+    <!-- 캡슐 포일 -->
+    <rect x="64" y="14" width="32" height="22" rx="4" fill="#8B1A2A"/>
+    <rect x="64" y="14" width="32" height="6" rx="4" fill="#A02030"/>
+    <line x1="72" y1="14" x2="72" y2="36" stroke="rgba(255,255,255,0.15)" stroke-width="1"/>
+    <line x1="88" y1="14" x2="88" y2="36" stroke="rgba(255,255,255,0.15)" stroke-width="1"/>
+    <!-- 병목 -->
+    <rect x="70" y="34" width="20" height="48" rx="3" fill="#1A0A10"/>
+    <rect x="72" y="36" width="4" height="44" rx="2" fill="rgba(255,255,255,0.08)"/>
+    <!-- 어깨~바디 -->
+    <path d="M70 82 C70 82 58 92 54 106 L54 222 L106 222 L106 106 C102 92 90 82 90 82 Z" fill="#1A0A10"/>
+    <!-- 바디 하이라이트 -->
+    <path d="M57 108 C56 112 55 120 55 130 L55 200" stroke="rgba(255,255,255,0.07)" stroke-width="5" stroke-linecap="round"/>
+    <!-- 라벨 -->
+    <rect x="57" y="112" width="46" height="72" rx="3" fill="#FAF5EE"/>
+    <rect x="57" y="112" width="46" height="72" rx="3" stroke="#E8D8C0" stroke-width="0.8"/>
+    <rect x="60" y="115" width="40" height="1.5" rx="0.5" fill="#C5973A"/>
+    <rect x="60" y="180" width="40" height="1.5" rx="0.5" fill="#C5973A"/>
+    <rect x="63" y="121" width="34" height="2" rx="1" fill="#2A1A10" opacity="0.5"/>
+    <rect x="66" y="126" width="28" height="1.5" rx="0.5" fill="#2A1A10" opacity="0.3"/>
+    <!-- 엠블럼 -->
+    <rect x="68" y="132" width="24" height="18" rx="2" fill="#F0E8D8"/>
+    <rect x="68" y="132" width="24" height="18" rx="2" stroke="#C5973A" stroke-width="0.8"/>
+    <rect x="71" y="135" width="18" height="1.2" rx="0.5" fill="#8B1A2A" opacity="0.6"/>
+    <rect x="71" y="138" width="18" height="1.2" rx="0.5" fill="#8B1A2A" opacity="0.4"/>
+    <rect x="71" y="141" width="18" height="1.2" rx="0.5" fill="#8B1A2A" opacity="0.4"/>
+    <rect x="71" y="144" width="14" height="1.2" rx="0.5" fill="#8B1A2A" opacity="0.3"/>
+    <!-- 라벨 하단 텍스트 -->
+    <rect x="63" y="154" width="34" height="1.5" rx="0.5" fill="#2A1A10" opacity="0.35"/>
+    <rect x="65" y="158" width="30" height="1" rx="0.5" fill="#2A1A10" opacity="0.25"/>
+    <rect x="65" y="161" width="28" height="1" rx="0.5" fill="#2A1A10" opacity="0.2"/>
+    <rect x="63" y="165" width="34" height="1.5" rx="0.5" fill="#2A1A10" opacity="0.25"/>
+    <rect x="66" y="169" width="28" height="1" rx="0.5" fill="#2A1A10" opacity="0.2"/>
+    <rect x="68" y="173" width="24" height="1" rx="0.5" fill="#2A1A10" opacity="0.15"/>
+    <!-- 병 바닥 -->
+    <path d="M54 218 C54 218 54 226 80 226 C106 226 106 218 106 218 Z" fill="#0E0608"/>
+    <ellipse cx="80" cy="222" rx="14" ry="4" fill="#140810" opacity="0.5"/>
+  </svg>
+      </div>
+
+      <button class="scan-btn" onclick="startScanner()">
+        <span style="font-size:22px">📷</span>
+        바코드 / QR 스캔하기
+      </button>
+
+      <p class="hint">
+        <strong>와인, 위스키, 맥주, 소주, 사케</strong> 등<br>
+        모든 술병 바코드를 스캔해보세요 🍾
+      </p>
+
+      <div class="divider"></div>
+
+      <div class="manual-section">
+        <div class="manual-label">바코드 번호 직접 입력</div>
+        <div class="manual-row">
+          <input class="manual-input" id="manual-barcode" type="text" placeholder="예) 3760040600019" maxlength="30">
+          <button class="manual-btn" onclick="searchManual()">검색</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SCANNER ══ -->
+  <div id="screen-scanner">
+    <div class="scanner-header">
+      <button class="back-btn" onclick="stopScanner()">←</button>
+      <div class="scanner-title">바코드 스캔</div>
+    </div>
+    <div class="camera-wrap">
+      <div id="qr-reader"></div>
+      <div class="scan-overlay">
+        <div class="scan-flash" id="scan-flash"></div>
+        <div class="scan-success-banner" id="scan-success-banner">✅ 인식 완료!</div>
+        <div class="scan-line"></div>
+        <div class="corner corner-tl" id="corner-tl"></div>
+        <div class="corner corner-tr" id="corner-tr"></div>
+        <div class="corner corner-bl" id="corner-bl"></div>
+        <div class="corner corner-br" id="corner-br"></div>
+      </div>
+    </div>
+    <p class="scanner-hint">
+      술병 바코드나 QR코드를 화면 중앙에 맞춰주세요<br>
+      <span style="color:var(--accent); font-weight:600;">자동으로 인식</span>됩니다
+    </p>
+  </div>
+
+  <!-- ══ LOADING ══ -->
+  <div id="screen-loading">
+    <div class="loading-bottle" id="loading-emoji">🍶</div>
+    <div class="loading-text">정보 조회 중...</div>
+    <div class="loading-sub" id="loading-barcode-text"></div>
+    <div class="loading-bar"><div class="loading-bar-inner"></div></div>
+  </div>
+
+  <!-- ══ RESULT ══ -->
+  <div id="screen-result">
+    <div class="result-header">
+      <button class="back-btn" onclick="showHome()">←</button>
+      <div style="font-family:'Playfair Display',serif; font-size:16px; font-weight:700; color:var(--primary);">술 정보</div>
+    </div>
+
+    <div class="result-hero" id="result-hero">
+      <div class="result-hero-emoji" id="r-hero-emoji">🍷</div>
+      <div class="result-type-badge" id="r-type">와인</div>
+      <div class="result-name" id="r-name">—</div>
+      <div class="result-sub" id="r-sub">—</div>
+      <div class="result-score">
+        <span class="stars" id="r-stars">★★★★☆</span>
+        <span class="score-num" id="r-score">4.0</span>
+        <span style="font-size:12px; opacity:0.7;">/ 5.0</span>
+      </div>
+    </div>
+
+    <div class="info-grid">
+      <div class="info-card">
+        <div class="info-card-label">원산지</div>
+        <div class="info-card-value" id="r-region">—</div>
+      </div>
+      <div class="info-card">
+        <div class="info-card-label">가격대</div>
+        <div class="info-card-value price" id="r-price">—</div>
+        <div class="price-note" id="r-price-note"></div>
+      </div>
+      <div class="info-card wide">
+        <div class="info-card-label">주요 원료 / 품종</div>
+        <div class="info-card-value" id="r-ingredient">—</div>
+      </div>
+      <div class="info-card">
+        <div class="info-card-label">도수</div>
+        <div class="info-card-value" id="r-abv">—</div>
+      </div>
+      <div class="info-card">
+        <div class="info-card-label">용량</div>
+        <div class="info-card-value" id="r-volume">—</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">👃 테이스팅 노트</div>
+      <div class="section-body" id="r-tasting">—</div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">🍽️ 추천 페어링</div>
+      <div class="pairing-list" id="r-pairing"></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">📖 소개</div>
+      <div class="section-body" id="r-desc">—</div>
+    </div>
+
+    <div class="barcode-tag" id="r-barcode"></div>
+
+    <button class="scan-again-btn" onclick="showHome()">
+      📷 다시 스캔하기
+    </button>
+  </div>
+
+
+  <!-- ══ LIMIT ══ -->
+  <div id="screen-limit">
+    <div class="limit-icon">🔒</div>
+    <div class="limit-title">이번 달 한도 초과</div>
+    <div class="limit-msg">
+      월 150회 스캔 한도를 모두 사용했어요.<br>
+      다음 달 1일에 자동으로 초기화돼요.
+    </div>
+    <div class="limit-reset" id="limit-reset-date"></div>
+    <div class="limit-bar-wrap"><div class="limit-bar-fill"></div></div>
+    <div style="margin-top:24px; font-size:12px; color:var(--muted);">150 / 150회 사용 완료</div>
+  </div>
+
+  <!-- ══ ERROR ══ -->
+  <div id="screen-error">
+    <div class="error-icon">😔</div>
+    <div class="error-title">정보를 찾지 못했어요</div>
+    <div class="error-msg" id="error-msg">해당 바코드의 정보를 찾을 수 없어요.</div>
+    <button class="retry-btn" onclick="showHome()">다시 시도</button>
+  </div>
+
+</div>
+
+<script>
+let html5QrCode = null;
+let scanning = false;
+
+// ── userId: 기기 고유 ID (로컬 저장) ──
+function getUserId() {
+  let uid = localStorage.getItem('bottlescan_uid');
+  if (!uid) {
+    uid = 'u_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+    localStorage.setItem('bottlescan_uid', uid);
+  }
+  return uid;
+}
+
+// ── 카운터 UI 업데이트 ──
+function updateCounter(used, limit) {
+  const el = document.getElementById('counter-used');
+  const bar = document.getElementById('counter-bar');
+  if (el) el.textContent = used;
+  if (bar) {
+    const pct = Math.min(100, (used / limit) * 100);
+    bar.style.width = pct + '%';
+    if (pct >= 80) bar.classList.add('warning');
+    else bar.classList.remove('warning');
+  }
+}
+
+// ── 앱 시작시 남은 횟수 조회 ──
+async function loadCounter() {
+  try {
+    const uid = getUserId();
+    const res = await fetch('/api/scan?userId=' + uid);
+    const data = await res.json();
+    updateCounter(data.used || 0, data.limit || 150);
+  } catch {}
+}
+
+window.addEventListener('DOMContentLoaded', loadCounter);
+
+// 술 종류별 테마
+const DRINK_THEMES = {
+  '와인':      { bg: 'linear-gradient(135deg, #7B1D2E, #4A0E1A)', emoji: '🍷', chip: '#FFF0F2', chipText: '#7B1D2E' },
+  '레드와인':  { bg: 'linear-gradient(135deg, #7B1D2E, #4A0E1A)', emoji: '🍷', chip: '#FFF0F2', chipText: '#7B1D2E' },
+  '화이트와인':{ bg: 'linear-gradient(135deg, #8B7A2E, #5A4A10)', emoji: '🥂', chip: '#FFFBEA', chipText: '#8B7A2E' },
+  '스파클링':  { bg: 'linear-gradient(135deg, #2980B9, #1A5276)', emoji: '🍾', chip: '#EEF7FA', chipText: '#2980B9' },
+  '로제':      { bg: 'linear-gradient(135deg, #C0506A, #8B2840)', emoji: '🌸', chip: '#FFF0F5', chipText: '#C0506A' },
+  '위스키':    { bg: 'linear-gradient(135deg, #8B4513, #5A2D0C)', emoji: '🥃', chip: '#FFF5EE', chipText: '#8B4513' },
+  '버번':      { bg: 'linear-gradient(135deg, #7B3A10, #4A2008)', emoji: '🥃', chip: '#FFF5EE', chipText: '#7B3A10' },
+  '스카치':    { bg: 'linear-gradient(135deg, #6B3010, #3A1808)', emoji: '🥃', chip: '#FFF5EE', chipText: '#6B3010' },
+  '맥주':      { bg: 'linear-gradient(135deg, #B8860B, #7A5800)', emoji: '🍺', chip: '#FFFBEA', chipText: '#9B7300' },
+  '에일':      { bg: 'linear-gradient(135deg, #A0720A, #6A4A00)', emoji: '🍺', chip: '#FFFBEA', chipText: '#8B6200' },
+  '사케':      { bg: 'linear-gradient(135deg, #8B7355, #5A4A35)', emoji: '🍶', chip: '#FDF8F2', chipText: '#7A5C3A' },
+  '청주':      { bg: 'linear-gradient(135deg, #7A8B6A, #4A5A3A)', emoji: '🍶', chip: '#F2F5EE', chipText: '#4A5A3A' },
+  '소주':      { bg: 'linear-gradient(135deg, #4A90A4, #2A6070)', emoji: '🥂', chip: '#EEF7FA', chipText: '#4A90A4' },
+  '막걸리':    { bg: 'linear-gradient(135deg, #A0896A, #6A5A3A)', emoji: '🪣', chip: '#FDF5EC', chipText: '#7A5C3A' },
+  '럼':        { bg: 'linear-gradient(135deg, #6B2D0E, #3A1808)', emoji: '🍹', chip: '#FFF0E8', chipText: '#6B2D0E' },
+  '진':        { bg: 'linear-gradient(135deg, #2E7D52, #1A4A30)', emoji: '🌿', chip: '#EEF8F2', chipText: '#2E7D52' },
+  '보드카':    { bg: 'linear-gradient(135deg, #4A4A6A, #2A2A4A)', emoji: '🫗', chip: '#F0F0F8', chipText: '#4A4A6A' },
+  '테킬라':    { bg: 'linear-gradient(135deg, #7A8B2A, #4A5A10)', emoji: '🌵', chip: '#F5F8EE', chipText: '#5A6A20' },
+  '브랜디':    { bg: 'linear-gradient(135deg, #8B5A2E, #5A3A18)', emoji: '🍸', chip: '#FFF5EE', chipText: '#8B5A2E' },
+  '기타':      { bg: 'linear-gradient(135deg, #4A4A4A, #2A2A2A)', emoji: '🍾', chip: '#F0F0F0', chipText: '#4A4A4A' },
+};
+
+function getTheme(type) {
+  if (!type) return DRINK_THEMES['기타'];
+  const key = Object.keys(DRINK_THEMES).find(k => type.includes(k));
+  return key ? DRINK_THEMES[key] : DRINK_THEMES['기타'];
+}
+
+function showScreen(name) {
+  ['home','scanner','loading','result','error','limit'].forEach(s => {
+    const el = document.getElementById('screen-' + s);
+    if (el) el.style.display = 'none';
+  });
+  const target = document.getElementById('screen-' + name);
+  if (target) target.style.display = 'flex';
+}
+
+function showHome() {
+  stopScanner();
+  showScreen('home');
+}
+
+// ── Scan success feedback ──
+function triggerScanSuccess() {
+  const flash = document.getElementById('scan-flash');
+  flash.classList.remove('active'); void flash.offsetWidth; flash.classList.add('active');
+
+  const banner = document.getElementById('scan-success-banner');
+  banner.classList.remove('active'); void banner.offsetWidth; banner.classList.add('active');
+
+  ['corner-tl','corner-tr','corner-bl','corner-br'].forEach(id => {
+    document.getElementById(id).classList.add('success');
+  });
+
+  if (navigator.vibrate) navigator.vibrate([80, 40, 80]);
+
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.frequency.setValueAtTime(880, ctx.currentTime);
+    osc.frequency.setValueAtTime(1100, ctx.currentTime + 0.1);
+    gain.gain.setValueAtTime(0.3, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+    osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.4);
+  } catch {}
+}
+
+// ── Scanner ──
+async function startScanner() {
+  showScreen('scanner');
+  // reset corners
+  ['corner-tl','corner-tr','corner-bl','corner-br'].forEach(id => {
+    document.getElementById(id).classList.remove('success');
+  });
+  scanning = false;
+  await new Promise(r => setTimeout(r, 100));
+
+  html5QrCode = new Html5Qrcode("qr-reader");
+  const config = {
+    fps: 10,
+    qrbox: { width: 240, height: 160 },
+    formatsToSupport: [
+      Html5QrcodeSupportedFormats.EAN_13,
+      Html5QrcodeSupportedFormats.EAN_8,
+      Html5QrcodeSupportedFormats.UPC_A,
+      Html5QrcodeSupportedFormats.UPC_E,
+      Html5QrcodeSupportedFormats.CODE_128,
+      Html5QrcodeSupportedFormats.QR_CODE,
+    ]
+  };
+
+  try {
+    await html5QrCode.start(
+      { facingMode: "environment" },
+      config,
+      (decodedText) => {
+        if (!scanning) {
+          scanning = true;
+          triggerScanSuccess();
+          setTimeout(() => {
+            stopScannerSilent();
+            searchDrink(decodedText);
+          }, 700);
+        }
+      },
+      () => {}
+    );
+  } catch (e) {
+    showScreen('error');
+    document.getElementById('error-msg').textContent = '카메라 접근 권한이 필요해요. 브라우저 설정에서 카메라를 허용해주세요.';
+  }
+}
+
+async function stopScannerSilent() {
+  try { if (html5QrCode) { await html5QrCode.stop(); html5QrCode = null; } } catch {}
+}
+
+async function stopScanner() {
+  scanning = false;
+  await stopScannerSilent();
+  showScreen('home');
+}
+
+function searchManual() {
+  const val = document.getElementById('manual-barcode').value.trim();
+  if (!val) { alert('바코드 번호를 입력해주세요'); return; }
+  searchDrink(val);
+}
+
+// ── API Call (백엔드 서버 경유) ──
+async function searchDrink(barcode) {
+  showScreen('loading');
+  document.getElementById('loading-barcode-text').textContent = '바코드: ' + barcode;
+
+  // 로딩 이모지 랜덤
+  const emojis = ['🍷','🥃','🍺','🍶','🥂','🍾'];
+  document.getElementById('loading-emoji').textContent = emojis[Math.floor(Math.random() * emojis.length)];
+
+  try {
+    const uid = getUserId();
+    const res = await fetch('/api/scan', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ barcode, userId: uid })
+    });
+
+    const data = await res.json();
+
+    if (res.status === 429 || data.error === 'limit_exceeded') {
+      document.getElementById('limit-reset-date').textContent =
+        (data.resetDate || '다음 달 1일') + '에 초기화돼요';
+      updateCounter(150, 150);
+      showScreen('limit');
+      return;
+    }
+
+    if (!res.ok) throw new Error('서버 오류: ' + res.status);
+    if (data._meta) updateCounter(data._meta.used, data._meta.limit);
+
+    renderResult(data, barcode);
+  } catch (e) {
+    showScreen('error');
+    document.getElementById('error-msg').innerHTML = `정보를 불러오는 중 오류가 발생했어요.<br><small style="color:#bbb">${e.message}</small>`;
+  }
+}
+
+// ── Render ──
+function renderResult(w, barcode) {
+  const theme = getTheme(w.type || '');
+
+  // hero background
+  document.getElementById('result-hero').style.background = theme.bg;
+  document.getElementById('r-hero-emoji').textContent = theme.emoji;
+
+  // stars
+  const r = Math.round((w.rating || 4) * 2) / 2;
+  let stars = '';
+  for (let i = 1; i <= 5; i++) stars += i <= Math.floor(r) ? '★' : (i - 0.5 === r ? '★' : '☆');
+
+  document.getElementById('r-type').textContent = w.type || '주류';
+  document.getElementById('r-name').textContent = w.name || '—';
+  document.getElementById('r-sub').textContent = [w.region, w.vintage].filter(Boolean).join(' · ');
+  document.getElementById('r-stars').textContent = stars;
+  document.getElementById('r-score').textContent = (w.rating || 0).toFixed(1);
+  document.getElementById('r-region').textContent = w.region || '—';
+  document.getElementById('r-price').textContent = w.price_range || '정보 없음';
+  document.getElementById('r-price-note').textContent = w.price_range ? '※ 예상 가격대' : '';
+  document.getElementById('r-ingredient').textContent = w.ingredient || w.grape || '—';
+  document.getElementById('r-abv').textContent = w.abv ? w.abv + '%' : '—';
+  document.getElementById('r-volume').textContent = w.volume || '—';
+  document.getElementById('r-tasting').textContent = w.tasting || '—';
+  document.getElementById('r-desc').textContent = w.description || '—';
+  document.getElementById('r-barcode').textContent = '바코드: ' + barcode;
+
+  const pairingEl = document.getElementById('r-pairing');
+  pairingEl.innerHTML = '';
+  (w.pairings || []).forEach(p => {
+    const chip = document.createElement('span');
+    chip.className = 'pairing-chip';
+    chip.style.background = theme.chip;
+    chip.style.color = theme.chipText;
+    chip.textContent = p;
+    pairingEl.appendChild(chip);
+  });
+
+  scanning = false;
+  showScreen('result');
+}
+</script>
+</body>
+</html>

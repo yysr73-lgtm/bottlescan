@@ -1,0 +1,9 @@
+{
+  "name": "bottlescan-api",
+  "version": "1.0.0",
+  "description": "BottleScan 백엔드 API - 바코드로 주류 정보 조회",
+  "main": "api/scan.js",
+  "engines": {
+    "node": ">=18"
+  }
+}
