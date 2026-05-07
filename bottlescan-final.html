@@ -412,14 +412,15 @@
   </svg>
       </div>
 
-      <button class="scan-btn" onclick="startScanner()">
-        <span style="font-size:22px">📷</span>
-        바코드 스캔하기
-      </button>
       <button class="scan-btn" onclick="startImageScanner()"
-        style="margin-top:10px; background:linear-gradient(135deg, var(--accent), #a87d2e);">
+        style="background:linear-gradient(135deg, var(--accent), #a87d2e);">
         <span style="font-size:22px">🖼️</span>
         라벨 사진으로 스캔
+      </button>
+      <button class="scan-btn" onclick="startScanner()"
+        style="margin-top:10px; background:var(--primary); box-shadow:0 4px 16px rgba(26,26,46,0.2);">
+        <span style="font-size:22px">📷</span>
+        바코드 스캔하기
       </button>
 
       <p class="hint">
