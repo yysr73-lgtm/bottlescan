@@ -414,8 +414,8 @@
 
       <button class="scan-btn" onclick="startImageScanner()"
         style="background:linear-gradient(135deg, var(--accent), #a87d2e);">
-        <span style="font-size:22px">🖼️</span>
-        라벨 사진으로 스캔
+        <span style="font-size:22px">🔍</span>
+        이미지로 검색
       </button>
       <button class="scan-btn" onclick="startScanner()"
         style="margin-top:10px; background:var(--primary); box-shadow:0 4px 16px rgba(26,26,46,0.2);">
@@ -480,7 +480,42 @@
     <div class="image-scan-wrap">
       <video id="image-preview-video" autoplay playsinline muted></video>
       <div class="label-overlay">
-        <div class="label-frame"></div>
+        <div class="label-frame">
+          <!-- 라벨 예시 SVG -->
+          <svg viewBox="0 0 180 240" fill="none" xmlns="http://www.w3.org/2000/svg"
+            style="width:100%; height:100%; opacity:0.35; padding:8px;">
+            <!-- 라벨 배경 -->
+            <rect x="10" y="10" width="160" height="220" rx="6" fill="rgba(248,245,240,0.8)" stroke="rgba(197,151,58,0.6)" stroke-width="1.5"/>
+            <!-- 상단 골드 장식선 -->
+            <rect x="20" y="22" width="140" height="1.5" rx="1" fill="rgba(197,151,58,0.8)"/>
+            <!-- 와이너리 이름 -->
+            <rect x="30" y="32" width="120" height="8" rx="2" fill="rgba(30,15,5,0.5)"/>
+            <!-- 엠블럼/문장 -->
+            <rect x="60" y="48" width="60" height="55" rx="4" fill="rgba(197,151,58,0.15)" stroke="rgba(197,151,58,0.5)" stroke-width="1"/>
+            <path d="M90 58 L105 75 L90 92 L75 75 Z" fill="rgba(197,151,58,0.3)" stroke="rgba(197,151,58,0.5)" stroke-width="1"/>
+            <rect x="75" y="68" width="30" height="1.5" rx="1" fill="rgba(197,151,58,0.6)"/>
+            <rect x="78" y="73" width="24" height="1.5" rx="1" fill="rgba(197,151,58,0.6)"/>
+            <rect x="75" y="78" width="30" height="1.5" rx="1" fill="rgba(197,151,58,0.6)"/>
+            <!-- 와인 이름 (굵은 텍스트) -->
+            <rect x="25" y="112" width="130" height="10" rx="2" fill="rgba(30,15,5,0.6)"/>
+            <rect x="35" y="128" width="110" height="7" rx="2" fill="rgba(30,15,5,0.4)"/>
+            <!-- 빈티지 -->
+            <rect x="65" y="142" width="50" height="6" rx="2" fill="rgba(30,15,5,0.35)"/>
+            <!-- 중간 장식선 -->
+            <rect x="20" y="155" width="140" height="1" rx="1" fill="rgba(197,151,58,0.5)"/>
+            <!-- 원산지 텍스트 -->
+            <rect x="40" y="163" width="100" height="5" rx="2" fill="rgba(30,15,5,0.3)"/>
+            <rect x="50" y="173" width="80" height="5" rx="2" fill="rgba(30,15,5,0.25)"/>
+            <!-- 도수/용량 -->
+            <rect x="25" y="185" width="55" height="4" rx="2" fill="rgba(30,15,5,0.2)"/>
+            <rect x="100" y="185" width="55" height="4" rx="2" fill="rgba(30,15,5,0.2)"/>
+            <!-- 하단 골드 장식선 -->
+            <rect x="20" y="196" width="140" height="1.5" rx="1" fill="rgba(197,151,58,0.8)"/>
+            <!-- 하단 텍스트 -->
+            <rect x="45" y="204" width="90" height="4" rx="2" fill="rgba(30,15,5,0.2)"/>
+            <rect x="55" y="212" width="70" height="4" rx="2" fill="rgba(30,15,5,0.15)"/>
+          </svg>
+        </div>
       </div>
       <div class="image-counter-badge" id="image-counter-badge">이미지 0/20</div>
       <button class="capture-btn" onclick="captureImage()">📷</button>
@@ -494,9 +529,17 @@
   <!-- ══ LOADING ══ -->
   <div id="screen-loading">
     <div class="loading-bottle" id="loading-emoji">🍶</div>
-    <div class="loading-text">정보 조회 중...</div>
+    <div class="loading-text" id="loading-title">정보 조회 중...</div>
     <div class="loading-sub" id="loading-barcode-text"></div>
-    <div class="loading-bar"><div class="loading-bar-inner"></div></div>
+    <div class="loading-bar"><div class="loading-bar-inner" id="loading-bar-inner"></div></div>
+    <!-- 이미지 분석 전용 -->
+    <div id="loading-image-extra" style="display:none; margin-top:16px; text-align:center;">
+      <div style="font-size:12px; color:var(--muted); margin-bottom:8px;">AI가 라벨을 읽고 있어요 🤖</div>
+      <div style="width:200px; height:6px; background:var(--border); border-radius:6px; overflow:hidden; margin:0 auto;">
+        <div id="image-progress-bar" style="height:100%; width:0%; background:linear-gradient(90deg, var(--accent), #e8a020); border-radius:6px; transition:width 0.3s;"></div>
+      </div>
+      <div id="image-progress-text" style="font-size:11px; color:var(--accent); margin-top:6px; font-weight:600;">0%</div>
+    </div>
   </div>
 
   <!-- ══ RESULT ══ -->
@@ -856,8 +899,23 @@ function captureImage() {
 
 async function analyzeLabel(base64Image) {
   showScreen('loading');
-  document.getElementById('loading-barcode-text').textContent = '라벨 이미지 분석 중...';
-  document.getElementById('loading-emoji').textContent = '🖼️';
+  document.getElementById('loading-title').textContent = '이미지 분석 중...';
+  document.getElementById('loading-barcode-text').textContent = 'AI가 라벨을 읽고 있어요';
+  document.getElementById('loading-emoji').textContent = '🔍';
+  document.getElementById('loading-image-extra').style.display = 'block';
+
+  // 프로그레스 바 애니메이션
+  let progress = 0;
+  const progressBar = document.getElementById('image-progress-bar');
+  const progressText = document.getElementById('image-progress-text');
+  const progressInterval = setInterval(() => {
+    if (progress < 85) {
+      progress += Math.random() * 8;
+      progress = Math.min(progress, 85);
+      progressBar.style.width = progress + '%';
+      progressText.textContent = Math.round(progress) + '%';
+    }
+  }, 300);
 
   try {
     const uid = getUserId();
@@ -868,11 +926,18 @@ async function analyzeLabel(base64Image) {
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || '오류');
+    clearInterval(progressInterval);
+    progressBar.style.width = '100%';
+    progressText.textContent = '100%';
+    await new Promise(r => setTimeout(r, 300));
+    document.getElementById('loading-image-extra').style.display = 'none';
     if (data._meta) updateCounter(data._meta.used, data._meta.limit);
     const newCount = incrementImageCount();
     document.getElementById('image-counter-badge') && (document.getElementById('image-counter-badge').textContent = `이미지 ${newCount}/20`);
     renderResult(data, '라벨 스캔');
   } catch (e) {
+    clearInterval(progressInterval);
+    document.getElementById('loading-image-extra').style.display = 'none';
     showScreen('error');
     document.getElementById('error-msg').innerHTML = `분석 중 오류가 발생했어요.<br><small style="color:#bbb">${e.message}</small>`;
   }
@@ -907,6 +972,8 @@ async function searchByName() {
 // ── API Call (백엔드 서버 경유) ──
 async function searchDrink(barcode) {
   showScreen('loading');
+  document.getElementById('loading-title').textContent = '정보 조회 중...';
+  document.getElementById('loading-image-extra').style.display = 'none';
   document.getElementById('loading-barcode-text').textContent = '바코드: ' + barcode;
 
   // 로딩 이모지 랜덤
