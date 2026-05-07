@@ -240,6 +240,12 @@
   .barcode-tag { text-align: center; padding: 8px 0 0; font-size: 11px; color: #ccc; font-family: monospace; letter-spacing: 0.05em; }
 
   /* ── Error ── */
+
+  #screen-name-search {
+    display: none; flex: 1; flex-direction: column;
+    overflow-y: auto;
+  }
+
   #screen-error { display: none; flex: 1; flex-direction: column; align-items: center; justify-content: center; padding: 40px 24px; text-align: center; }
   .error-icon { font-size: 56px; }
   .error-title { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 700; color: var(--primary); margin-top: 16px; }
@@ -321,6 +327,12 @@
 
       <div class="divider"></div>
 
+      <!-- 이름 검색 버튼 -->
+      <button onclick="showScreen('name-search'); document.getElementById('name-search-input').value=''; document.getElementById('name-search-input').focus();"
+        style="width:100%; max-width:320px; padding:14px; background:var(--surface); color:var(--primary); border:1.5px solid var(--border); border-radius:var(--radius); font-family:'DM Sans',sans-serif; font-size:14px; font-weight:600; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:16px; transition:all 0.2s;">
+        🔍 술 이름으로 검색
+      </button>
+
       <div class="manual-section">
         <div class="manual-label">바코드 번호 직접 입력</div>
         <div class="manual-row">
@@ -350,8 +362,8 @@
       </div>
     </div>
     <p class="scanner-hint">
-      술병 바코드나 QR코드를 화면 중앙에 맞춰주세요<br>
-      <span style="color:var(--accent); font-weight:600;">자동으로 인식</span>됩니다
+      바코드가 <strong>밝은 곳</strong>에서 잘 인식돼요 💡<br>
+      바코드를 스캔 영역 안에 맞춰주세요 → <span style="color:var(--accent); font-weight:600;">자동 인식</span>
     </p>
   </div>
 
@@ -442,6 +454,36 @@
     <div style="margin-top:24px; font-size:12px; color:var(--muted);">150 / 150회 사용 완료</div>
   </div>
 
+
+  <!-- ══ NAME SEARCH ══ -->
+  <div id="screen-name-search">
+    <div class="result-header">
+      <button class="back-btn" onclick="showHome()">←</button>
+      <div style="font-family:'Playfair Display',serif; font-size:16px; font-weight:700; color:var(--primary);">술 이름 검색</div>
+    </div>
+    <div style="padding: 20px 20px 0; text-align:center;">
+      <div style="font-size:48px; margin-bottom:12px;">🔍</div>
+      <div style="font-family:'Playfair Display',serif; font-size:20px; font-weight:700; color:var(--primary); margin-bottom:8px;">바코드를 찾지 못했어요</div>
+      <div style="font-size:13px; color:var(--muted); line-height:1.6; margin-bottom:24px;">술 이름을 입력하면 정확한 정보를<br>알려드릴게요!</div>
+      <div style="display:flex; gap:8px; margin-bottom:12px;">
+        <input
+          id="name-search-input"
+          type="text"
+          placeholder="예) Chardonnay, 화요 25, 발렌타인 17"
+          style="flex:1; padding:14px 16px; border:1.5px solid var(--border); border-radius:14px; font-family:'DM Sans',sans-serif; font-size:14px; outline:none; background:var(--surface); color:var(--text);"
+          onkeydown="if(event.key==='Enter') searchByName()"
+        />
+      </div>
+      <button onclick="searchByName()"
+        style="width:100%; padding:16px; background:var(--primary); color:#fff; border:none; border-radius:14px; font-family:'DM Sans',sans-serif; font-size:15px; font-weight:600; cursor:pointer; box-shadow:0 4px 16px rgba(26,26,46,0.2);">
+        🔍 검색하기
+      </button>
+      <div style="margin-top:16px; font-size:12px; color:var(--muted);">
+        한글/영어 모두 가능해요
+      </div>
+    </div>
+  </div>
+
   <!-- ══ ERROR ══ -->
   <div id="screen-error">
     <div class="error-icon">😔</div>
@@ -522,7 +564,7 @@ function getTheme(type) {
 }
 
 function showScreen(name) {
-  ['home','scanner','loading','result','error','limit'].forEach(s => {
+  ['home','scanner','loading','result','error','limit','name-search'].forEach(s => {
     const el = document.getElementById('screen-' + s);
     if (el) el.style.display = 'none';
   });
@@ -575,16 +617,16 @@ async function startScanner() {
   html5QrCode = new Html5Qrcode("qr-reader");
   const config = {
     fps: 15,
-qrbox: { width: 280, height: 100 },
-aspectRatio: 1.777,
+    qrbox: { width: 300, height: 100 },
+    aspectRatio: 1.0,
     formatsToSupport: [
-      Html5QrcodeSupportedFormats.CODE_39,
-      Html5QrcodeSupportedFormats.ITF,
       Html5QrcodeSupportedFormats.EAN_13,
       Html5QrcodeSupportedFormats.EAN_8,
       Html5QrcodeSupportedFormats.UPC_A,
       Html5QrcodeSupportedFormats.UPC_E,
       Html5QrcodeSupportedFormats.CODE_128,
+      Html5QrcodeSupportedFormats.CODE_39,
+      Html5QrcodeSupportedFormats.ITF,
       Html5QrcodeSupportedFormats.QR_CODE,
     ]
   };
@@ -625,6 +667,33 @@ function searchManual() {
   const val = document.getElementById('manual-barcode').value.trim();
   if (!val) { alert('바코드 번호를 입력해주세요'); return; }
   searchDrink(val);
+}
+
+
+// ── 이름으로 검색 ──
+async function searchByName() {
+  const name = document.getElementById('name-search-input').value.trim();
+  if (!name) { alert('술 이름을 입력해주세요'); return; }
+  showScreen('loading');
+  document.getElementById('loading-barcode-text').textContent = '검색어: ' + name;
+  const emojis = ['🍷','🥃','🍺','🍶','🥂','🍾'];
+  document.getElementById('loading-emoji').textContent = emojis[Math.floor(Math.random() * emojis.length)];
+
+  try {
+    const uid = getUserId();
+    const res = await fetch('/api/scan', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ barcode: 'NAME_SEARCH', drinkName: name, userId: uid })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || '오류');
+    if (data._meta) updateCounter(data._meta.used, data._meta.limit);
+    renderResult(data, name);
+  } catch (e) {
+    showScreen('error');
+    document.getElementById('error-msg').innerHTML = `검색 중 오류가 발생했어요.<br><small style="color:#bbb">${e.message}</small>`;
+  }
 }
 
 // ── API Call (백엔드 서버 경유) ──
