@@ -1,7 +1,5 @@
-
 // api/scan.js
 // BottleScan 백엔드 - Open Food Facts + Claude AI
-// 필요 환경변수: ANTHROPIC_API_KEY
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -40,13 +38,20 @@ export default async function handler(req, res) {
 제품 정보: ${productInfo}
 바코드: ${barcode}
 
-이 정보를 바탕으로 정확한 술 정보를 제공하세요. 반드시 아래 JSON만 응답하세요:
-{"name":"술이름","type":"레드와인|화이트와인|스파클링|로제|위스키|버번|스카치|맥주|에일|사케|청주|소주|진|보드카|테킬라|브랜디|기타","vintage":"연도또는NV","region":"원산지(국가,지역)","ingredient":"주요원료또는품종","abv":13.5,"volume":"750ml","price_range":"한국기준예상가격대(예:₩30,000~50,000)","rating":4.2,"tasting":"테이스팅노트2~3문장","pairings":["음식1","음식2","음식3"],"description":"소개2~3문장"}`
-    : `당신은 주류 전문 소믈리에입니다. 바코드: ${barcode}
-바코드 국가코드 참고(30~37:프랑스, 40~44:독일, 45~49:일본, 80~83:이탈리아, 84:스페인, 880:한국, 00~09:미국/캐나다).
-주의: 880으로 시작해도 수입 와인일 수 있으니 단정하지 마세요.
-반드시 아래 JSON만 응답하세요:
-{"name":"술이름","type":"레드와인|화이트와인|스파클링|로제|위스키|버번|스카치|맥주|에일|사케|청주|소주|진|보드카|테킬라|브랜디|기타","vintage":"연도또는NV","region":"원산지(국가,지역)","ingredient":"주요원료또는품종","abv":13.5,"volume":"750ml","price_range":"한국기준예상가격대(예:₩30,000~50,000)","rating":4.2,"tasting":"테이스팅노트2~3문장","pairings":["음식1","음식2","음식3"],"description":"소개2~3문장"}`;
+반드시 아래 JSON만 응답하세요. 절대 "알 수 없음" 금지. 모르면 비슷한 제품으로 추정해서라도 채워주세요:
+{"name":"술이름","type":"레드와인|화이트와인|스파클링|로제|위스키|버번|스카치|맥주|에일|사케|청주|소주|진|보드카|테킬라|브랜디|기타","vintage":"연도또는NV","region":"원산지(국가,지역)","ingredient":"주요원료또는품종","abv":13.5,"volume":"750ml","price_range":"₩30,000~50,000","rating":4.2,"tasting":"테이스팅노트2~3문장","pairings":["음식1","음식2","음식3"],"description":"소개2~3문장"}`
+    : `당신은 주류 전문 소믈리에입니다.
+바코드: ${barcode}
+
+규칙:
+1. 바코드 앞자리 국가코드: 30~37=프랑스, 40~44=독일, 45~49=일본, 80~83=이탈리아, 84=스페인, 880=한국, 00~09=미국/캐나다, 76=스위스, 54=벨기에
+2. 880으로 시작해도 수입 와인/위스키일 수 있음. 단정 금지.
+3. 절대 "알 수 없음", "모름", "확인 불가" 금지! 반드시 해당 국가의 실제 존재하는 술 정보를 추정해서 제공.
+4. price_range 반드시 ₩ 단위로 입력.
+5. abv 반드시 숫자로 입력.
+
+반드시 아래 JSON만 응답:
+{"name":"술이름","type":"레드와인|화이트와인|스파클링|로제|위스키|버번|스카치|맥주|에일|사케|청주|소주|진|보드카|테킬라|브랜디|기타","vintage":"연도또는NV","region":"원산지(국가,지역)","ingredient":"주요원료또는품종","abv":13.5,"volume":"750ml","price_range":"₩30,000~50,000","rating":4.2,"tasting":"테이스팅노트2~3문장","pairings":["음식1","음식2","음식3"],"description":"소개2~3문장"}`;
 
   try {
     const r = await fetch('https://api.anthropic.com/v1/messages', {
@@ -69,7 +74,6 @@ export default async function handler(req, res) {
     const raw = data?.content?.[0]?.text || '';
     const drink = JSON.parse(raw.replace(/```json|```/g, '').trim());
 
-    // DB 조회 여부 표시
     return res.status(200).json({
       ...drink,
       _meta: {
