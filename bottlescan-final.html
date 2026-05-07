@@ -37,7 +37,7 @@
 
   html, body { height: 100%; width: 100%; background: var(--bg); font-family: 'DM Sans', sans-serif; color: var(--text); overflow-x: hidden; }
 
-  .app { width: 100%; max-width: 430px; margin: 0 auto; min-height: 100dvh; display: flex; flex-direction: column; overflow-x: hidden; }
+  .app { width: 100%; max-width: 430px; margin: 0 auto; display: flex; flex-direction: column; overflow-x: hidden; }
 
   /* ── Header ── */
   .header { padding: calc(clamp(18px,5vh,40px) + env(safe-area-inset-top, 0px)) clamp(14px,4vw,24px) clamp(12px,3vh,22px); text-align: center; }
@@ -351,7 +351,7 @@
   @keyframes loadbar { 0% { width: 0%; margin-left: 0; } 50% { width: 70%; margin-left: 15%; } 100% { width: 0%; margin-left: 100%; } }
 
   /* ── Result ── */
-  #screen-result { display: none; flex-direction: column; flex: 1; overflow-y: auto; }
+  #screen-result { display: none; flex-direction: column; width: 100%; overflow-y: auto; }
   .result-header { display: flex; align-items: center; padding: 20px 20px 0; gap: 12px; }
 
   .result-hero {
@@ -577,7 +577,7 @@
   </div>
 
   <!-- ══ RESULT ══ -->
-  <div id="screen-result">
+  <div id="screen-result" style="display:none;">
     <div class="result-header">
       <button class="back-btn" onclick="showHome()">←</button>
       <div style="font-family:'Playfair Display',serif; font-size:16px; font-weight:700; color:var(--primary);">술 정보</div>
@@ -770,7 +770,9 @@ function showScreen(name) {
     if (el) el.style.display = 'none';
   });
   const target = document.getElementById('screen-' + name);
-  if (target) target.style.display = 'flex';
+  // result/name-search/error는 block으로
+  const blockScreens = ['result','name-search','error','limit'];
+  if (target) target.style.display = blockScreens.includes(name) ? 'block' : 'flex';
 }
 
 function showHome() {
