@@ -1,5 +1,5 @@
 // api/scan.js - BottleScan 백엔드
-// Open Food Facts DB + 이름 검색 + Claude AI
+// 바코드 + 이미지 라벨 분석 + 이름 검색
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -8,22 +8,44 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const { barcode, drinkName } = req.body;
+  const { barcode, drinkName, imageData } = req.body;
   if (!barcode) return res.status(400).json({ error: '바코드가 없어요' });
 
+  let messages = [];
   let prompt = '';
 
+  // ── 이미지 라벨 분석 모드 ──
+  if (barcode === 'IMAGE_SCAN' && imageData) {
+    messages = [{
+      role: 'user',
+      content: [
+        {
+          type: 'image',
+          source: { type: 'base64', media_type: 'image/jpeg', data: imageData }
+        },
+        {
+          type: 'text',
+          text: `당신은 주류 전문 소믈리에입니다. 이 술병 라벨 이미지를 분석해서 술 정보를 알려주세요.
+
+라벨에서 술 이름, 브랜드, 원산지, 품종 등을 읽어서 정확한 정보를 제공하세요.
+반드시 아래 JSON만 응답하세요. 이미지가 불명확해도 최대한 추정해서 채워주세요:
+{"name":"술이름","type":"레드와인|화이트와인|스파클링|로제|위스키|버번|스카치|맥주|에일|사케|청주|소주|진|보드카|테킬라|브랜디|기타","vintage":"연도또는NV","region":"원산지(국가,지역)","ingredient":"주요원료또는품종","abv":13.5,"volume":"750ml","price_range":"₩30,000~50,000","rating":4.2,"tasting":"테이스팅노트2~3문장","pairings":["음식1","음식2","음식3"],"description":"소개2~3문장"}`
+        }
+      ]
+    }];
+
   // ── 이름 검색 모드 ──
-  if (barcode === 'NAME_SEARCH' && drinkName) {
+  } else if (barcode === 'NAME_SEARCH' && drinkName) {
     prompt = `당신은 주류 전문 소믈리에입니다. 아래 술에 대한 상세 정보를 알려주세요.
 
 술 이름: ${drinkName}
 
-반드시 아래 JSON만 응답하세요. 실제 존재하는 술 정보를 정확하게 제공하세요:
-{"name":"정확한 술 이름","type":"레드와인|화이트와인|스파클링|로제|위스키|버번|스카치|맥주|에일|사케|청주|소주|진|보드카|테킬라|브랜디|기타","vintage":"연도또는NV","region":"원산지(국가,지역)","ingredient":"주요원료또는품종","abv":13.5,"volume":"750ml","price_range":"₩30,000~50,000","rating":4.2,"tasting":"테이스팅노트2~3문장","pairings":["음식1","음식2","음식3"],"description":"소개2~3문장"}`;
+반드시 아래 JSON만 응답하세요:
+{"name":"정확한술이름","type":"레드와인|화이트와인|스파클링|로제|위스키|버번|스카치|맥주|에일|사케|청주|소주|진|보드카|테킬라|브랜디|기타","vintage":"연도또는NV","region":"원산지(국가,지역)","ingredient":"주요원료또는품종","abv":13.5,"volume":"750ml","price_range":"₩30,000~50,000","rating":4.2,"tasting":"테이스팅노트2~3문장","pairings":["음식1","음식2","음식3"],"description":"소개2~3문장"}`;
+    messages = [{ role: 'user', content: prompt }];
 
+  // ── 바코드 모드 ──
   } else {
-    // ── 바코드 모드 ──
     // Open Food Facts DB 조회
     let productInfo = '';
     try {
@@ -44,23 +66,22 @@ export default async function handler(req, res) {
       console.log('DB 조회 실패:', e.message);
     }
 
-    if (productInfo) {
-      // DB에서 찾은 경우
-      prompt = `당신은 주류 전문 소믈리에입니다. 아래 제품 정보를 바탕으로 상세한 술 정보를 알려주세요.
+    if (!productInfo) {
+      return res.status(404).json({
+        error: 'not_found',
+        message: '바코드로 이 술을 찾지 못했어요.',
+        barcode
+      });
+    }
+
+    prompt = `당신은 주류 전문 소믈리에입니다. 아래 제품 정보를 바탕으로 상세한 술 정보를 알려주세요.
 
 제품 정보: ${productInfo}
 바코드: ${barcode}
 
 반드시 아래 JSON만 응답하세요:
 {"name":"술이름","type":"레드와인|화이트와인|스파클링|로제|위스키|버번|스카치|맥주|에일|사케|청주|소주|진|보드카|테킬라|브랜디|기타","vintage":"연도또는NV","region":"원산지(국가,지역)","ingredient":"주요원료또는품종","abv":13.5,"volume":"750ml","price_range":"₩30,000~50,000","rating":4.2,"tasting":"테이스팅노트2~3문장","pairings":["음식1","음식2","음식3"],"description":"소개2~3문장"}`;
-    } else {
-      // DB에 없는 경우 → 이름 검색 유도 신호 반환
-      return res.status(404).json({
-        error: 'not_found',
-        message: '바코드로 이 술을 찾지 못했어요.',
-        barcode: barcode
-      });
-    }
+    messages = [{ role: 'user', content: prompt }];
   }
 
   try {
@@ -74,7 +95,7 @@ export default async function handler(req, res) {
       body: JSON.stringify({
         model: 'claude-sonnet-4-5',
         max_tokens: 1000,
-        messages: [{ role: 'user', content: prompt }]
+        messages
       }),
     });
 
