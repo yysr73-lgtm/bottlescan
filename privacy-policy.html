@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BottleScan - 개인정보처리방침</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #FAF8F5;
+    color: #1C1410;
+    line-height: 1.8;
+  }
+  header {
+    background: #1A1A2E;
+    padding: 24px 20px;
+    text-align: center;
+  }
+  header h1 {
+    color: #C5973A;
+    font-size: 24px;
+    font-weight: 700;
+  }
+  header p { color: rgba(255,255,255,0.6); font-size: 13px; margin-top: 4px; }
+  .container {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 40px 20px 80px;
+  }
+  .updated {
+    font-size: 13px;
+    color: #888;
+    margin-bottom: 32px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #E8E0D8;
+  }
+  h2 {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1A1A2E;
+    margin: 36px 0 12px;
+    padding-left: 12px;
+    border-left: 3px solid #C5973A;
+  }
+  p { font-size: 15px; color: #444; margin-bottom: 12px; }
+  ul { padding-left: 20px; margin-bottom: 12px; }
+  ul li { font-size: 15px; color: #444; margin-bottom: 6px; }
+  .highlight {
+    background: #FFF8EE;
+    border: 1px solid #F0DDB0;
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin: 16px 0;
+    font-size: 14px;
+    color: #7A5C20;
+  }
+  .contact {
+    background: #1A1A2E;
+    color: #fff;
+    border-radius: 14px;
+    padding: 24px;
+    margin-top: 40px;
+    text-align: center;
+  }
+  .contact h3 { color: #C5973A; margin-bottom: 8px; }
+  .contact p { color: rgba(255,255,255,0.75); font-size: 14px; }
+  footer {
+    text-align: center;
+    padding: 24px;
+    font-size: 12px;
+    color: #aaa;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🍷 BottleScan</h1>
+  <p>개인정보처리방침 / Privacy Policy</p>
+</header>
+
+<div class="container">
+
+  <p class="updated">최종 업데이트: 2026년 5월 8일</p>
+
+  <p>BottleScan(이하 "앱")은 사용자의 개인정보를 소중히 여기며, 개인정보 보호법 및 관련 법령을 준수합니다. 본 방침은 앱이 수집하는 정보와 그 사용 방법을 설명합니다.</p>
+
+  <h2>1. 수집하는 정보</h2>
+  <p>BottleScan은 서비스 제공을 위해 최소한의 정보만 처리합니다.</p>
+  <ul>
+    <li><strong>카메라 이미지</strong>: 술병 라벨 분석을 위해 촬영한 이미지 (서버에 저장되지 않음)</li>
+    <li><strong>바코드 데이터</strong>: 스캔한 바코드 번호 (정보 조회 후 즉시 삭제)</li>
+    <li><strong>익명 기기 ID</strong>: 월별 스캔 횟수 관리를 위한 임의 생성 식별자</li>
+    <li><strong>검색어</strong>: 사용자가 입력한 술 이름 (분석 후 저장하지 않음)</li>
+  </ul>
+
+  <div class="highlight">
+    📌 BottleScan은 이름, 이메일, 전화번호, 위치 정보 등 개인 식별 정보를 수집하지 않습니다.
+  </div>
+
+  <h2>2. 정보 사용 목적</h2>
+  <ul>
+    <li>술병 이미지 및 바코드 분석을 통한 주류 정보 제공</li>
+    <li>월별 스캔 횟수 제한 관리 (서비스 남용 방지)</li>
+    <li>서비스 품질 개선 및 오류 수정</li>
+  </ul>
+
+  <h2>3. 제3자 서비스</h2>
+  <p>BottleScan은 다음 제3자 서비스를 이용합니다.</p>
+  <ul>
+    <li><strong>Anthropic Claude API</strong>: 이미지 및 텍스트 분석 (Anthropic 개인정보처리방침 적용)</li>
+    <li><strong>Open Food Facts</strong>: 바코드 기반 제품 정보 조회 (공개 데이터베이스)</li>
+    <li><strong>Vercel</strong>: 서버 호스팅 (Vercel 개인정보처리방침 적용)</li>
+  </ul>
+
+  <h2>4. 카메라 권한</h2>
+  <p>앱은 술병 라벨 촬영 및 바코드 스캔을 위해 카메라 접근 권한이 필요합니다. 촬영된 이미지는 AI 분석 후 서버에 저장되지 않으며, 분석 완료 즉시 삭제됩니다.</p>
+
+  <div class="highlight">
+    📌 카메라로 촬영한 이미지는 분석 목적으로만 사용되며, 제3자와 공유되거나 마케팅 목적으로 사용되지 않습니다.
+  </div>
+
+  <h2>5. 데이터 보관</h2>
+  <ul>
+    <li>이미지 데이터: 분석 완료 즉시 삭제</li>
+    <li>바코드/검색어: 응답 후 즉시 삭제</li>
+    <li>스캔 횟수 카운터: 기기 로컬에만 저장, 익명 처리</li>
+  </ul>
+
+  <h2>6. 미성년자 보호</h2>
+  <p>BottleScan은 주류 정보 앱으로, 만 19세 이상을 대상으로 합니다. 미성년자의 사용을 금지하며, 미성년자로 확인된 경우 서비스 이용을 제한합니다.</p>
+
+  <h2>7. 사용자 권리</h2>
+  <p>사용자는 언제든지 다음 권리를 행사할 수 있습니다.</p>
+  <ul>
+    <li>개인정보 처리 현황 확인 요청</li>
+    <li>개인정보 삭제 요청</li>
+    <li>개인정보 처리 정지 요청</li>
+  </ul>
+
+  <h2>8. 보안</h2>
+  <p>BottleScan은 사용자 데이터 보호를 위해 HTTPS 암호화 통신을 사용하며, API 키 등 민감한 정보는 서버 환경변수로 안전하게 관리합니다.</p>
+
+  <h2>9. 방침 변경</h2>
+  <p>본 개인정보처리방침은 법령 변경 또는 서비스 변경 시 업데이트될 수 있습니다. 변경 시 앱 내 공지 또는 본 페이지를 통해 안내드립니다.</p>
+
+  <h2>10. English Summary</h2>
+  <p>BottleScan collects minimal data necessary to provide our service. We do not collect personal identification information (name, email, phone, location). Camera images are used solely for label analysis and are deleted immediately after processing. Barcode data and search queries are not stored. An anonymous device ID is used locally to manage monthly scan limits. We use Anthropic Claude API for AI analysis, Open Food Facts for barcode lookup, and Vercel for hosting. This app is intended for users 19 years and older.</p>
+
+  <div class="contact">
+    <h3>📧 문의하기 / Contact</h3>
+    <p>개인정보 관련 문의사항이 있으시면 아래로 연락해 주세요.</p>
+    <p style="margin-top:8px; color:#C5973A;">yysr73@gmail.com</p>
+  </div>
+
+</div>
+
+<footer>
+  © 2026 BottleScan. All rights reserved.
+</footer>
+
+</body>
+</html>
