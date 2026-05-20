@@ -724,11 +724,20 @@ function updateCounter(used, limit) {
 
 // ── 앱 시작시 남은 횟수 조회 ──
 async function loadCounter() {
-  try {
-    const uid = getUserId();
-    const res = await fetch('/api/scan?userId=' + uid);
-    const data = await res.json();
-    updateCounter(data.used || 0, data.limit || 150);
+  const uid = getUserId();
+  const key = 'scan_count_' + uid + '_' + new Date().toISOString().slice(0,7);
+  const used = parseInt(localStorage.getItem(key) || '0');
+  updateCounter(used, 150);
+}
+
+function incrementScanCount() {
+  const uid = getUserId();
+  const key = 'scan_count_' + uid + '_' + new Date().toISOString().slice(0,7);
+  const count = parseInt(localStorage.getItem(key) || '0') + 1;
+  localStorage.setItem(key, count);
+  updateCounter(count, 150);
+  return count;
+}
   } catch {}
 }
 
