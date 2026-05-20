@@ -1082,8 +1082,7 @@ async function searchDrink(barcode) {
     }
 
     if (!res.ok) throw new Error('서버 오류: ' + res.status);
-    if (data._meta) updateCounter(data._meta.used, data._meta.limit);
-
+    incrementScanCount();
     renderResult(data, barcode);
   } catch (e) {
     showScreen('error');
