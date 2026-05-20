@@ -1044,7 +1044,7 @@ async function searchByName() {
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || '오류');
-    if (data._meta) updateCounter(data._meta.used, data._meta.limit);
+   incrementScanCount();
     renderResult(data, name);
   } catch (e) {
     showScreen('error');
