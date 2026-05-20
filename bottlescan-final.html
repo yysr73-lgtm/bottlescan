@@ -1020,6 +1020,7 @@ async function analyzeLabel(base64Image) {
 async function searchByName() {
   const name = document.getElementById('name-search-input').value.trim();
   if (!name) { alert('술 이름을 입력해주세요'); return; }
+  document.getElementById('name-search-input').blur();
   showScreen('loading');
   document.getElementById('loading-barcode-text').textContent = '검색어: ' + name;
   const emojis = ['🍷','🥃','🍺','🍶','🥂','🍾'];
