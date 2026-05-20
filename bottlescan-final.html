@@ -729,6 +729,11 @@ async function loadCounter() {
   const key = 'scan_count_' + uid + '_' + new Date().toISOString().slice(0,7);
   const used = parseInt(localStorage.getItem(key) || '0');
   updateCounter(used, 150);
+
+  const imgKey = 'img_count_' + uid + '_' + new Date().toISOString().slice(0,7);
+  const imgUsed = parseInt(localStorage.getItem(imgKey) || '0');
+  const imgEl = document.getElementById('image-counter-used');
+  if (imgEl) imgEl.textContent = imgUsed;
 }
 
 function incrementScanCount() {
