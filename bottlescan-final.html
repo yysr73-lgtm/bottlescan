@@ -178,8 +178,8 @@
   }
 
   /* ── Image Scanner ── */
- #screen-image-scanner {
-    display: none; flex-direction: column; flex: 1; width: 100%; min-height: 100vh;
+  #screen-image-scanner {
+    display: none; flex-direction: column; flex: 1;
   }
   .image-scan-wrap {
     margin: 0 20px;
@@ -421,12 +421,11 @@
       <div class="header-title">Bottle<span>Scan</span></div>
       <div class="header-sub">모든 술병 바코드를 스캔하면 정보를 알려드려요</div>
 
-     <div class="scan-counter" id="scan-counter">
-📷 <span id="counter-used">0</span>/150
-&nbsp;·&nbsp;
-🔍 <span id="image-counter-used">0</span>/20
-<span class="counter-bar-wrap"><span class="counter-bar" id="counter-bar"></span></span>
-</div>
+      <div class="scan-counter" id="scan-counter">
+        <span id="counter-used">0</span> / 150회 사용
+        <span class="counter-bar-wrap"><span class="counter-bar" id="counter-bar"></span></span>
+      </div>
+    </div>
 
     <div style="flex:1; display:flex; flex-direction:column; align-items:center; padding: 0 24px 40px;">
       <!-- Illustration -->
@@ -498,6 +497,13 @@
         🔍 술 이름으로 검색
       </button>
 
+      <div class="manual-section">
+        <div class="manual-label">바코드 번호 직접 입력</div>
+        <div class="manual-row">
+          <input class="manual-input" id="manual-barcode" type="text" placeholder="예) 3760040600019" maxlength="30">
+          <button class="manual-btn" onclick="searchManual()">검색</button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -722,11 +728,6 @@ async function loadCounter() {
   const key = 'scan_count_' + uid + '_' + new Date().toISOString().slice(0,7);
   const used = parseInt(localStorage.getItem(key) || '0');
   updateCounter(used, 150);
-
-  const imgKey = 'img_count_' + uid + '_' + new Date().toISOString().slice(0,7);
-  const imgUsed = parseInt(localStorage.getItem(imgKey) || '0');
-  const imgEl = document.getElementById('image-counter-used');
-  if (imgEl) imgEl.textContent = imgUsed;
 }
 
 function incrementScanCount() {
@@ -735,8 +736,9 @@ function incrementScanCount() {
   const count = parseInt(localStorage.getItem(key) || '0') + 1;
   localStorage.setItem(key, count);
   updateCounter(count, 150);
-  return count;
+ return count;
 }
+
 window.addEventListener('DOMContentLoaded', loadCounter);
 
 // 술 종류별 테마
@@ -908,9 +910,7 @@ async function startImageScanner() {
     imageStream = await navigator.mediaDevices.getUserMedia({
       video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 960 } }
     });
-    const video = document.getElementById('image-preview-video');
-    video.srcObject = imageStream;
-    await video.play();
+    document.getElementById('image-preview-video').srcObject = imageStream;
   } catch (e) {
     alert('카메라 권한이 필요해요.');
     showHome();
