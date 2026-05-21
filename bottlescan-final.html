@@ -178,9 +178,8 @@
   }
 
   /* ── Image Scanner ── */
-  #screen-image-scanner {
+ #screen-image-scanner {
     display: none; flex-direction: column; flex: 1; width: 100%; min-height: 100vh;
-  }
   }
   .image-scan-wrap {
     margin: 0 20px;
@@ -909,7 +908,9 @@ async function startImageScanner() {
     imageStream = await navigator.mediaDevices.getUserMedia({
       video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 960 } }
     });
-    document.getElementById('image-preview-video').srcObject = imageStream;
+    const video = document.getElementById('image-preview-video');
+    video.srcObject = imageStream;
+    await video.play();
   } catch (e) {
     alert('카메라 권한이 필요해요.');
     showHome();
