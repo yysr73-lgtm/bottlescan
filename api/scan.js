@@ -1,10 +1,12 @@
 // api/scan.js - BottleScan 백엔드
 // 바코드 + 이미지 라벨 분석 + 이름 검색 + Vercel KV 카운터
 
-import { kv } from '@vercel/kv';
+import { Redis } from '@upstash/redis';
 
-const BARCODE_LIMIT = 150;
-const IMAGE_LIMIT = 20;
+const redis = new Redis({
+  url: process.env.KV_REST_API_URL,
+  token: process.env.KV_REST_API_TOKEN,
+});
 
 function getMonthKey(userId, type) {
   const ym = new Date().toISOString().slice(0, 7);
