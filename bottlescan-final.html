@@ -703,6 +703,19 @@ function getUserId() {
   return uid;
 }
 
+// ── 카운터 UI 업데이트 ──
+function updateCounter(used, limit) {
+  const el = document.getElementById('counter-used');
+  const bar = document.getElementById('counter-bar');
+  if (el) el.textContent = used;
+  if (bar) {
+    const pct = Math.min(100, (used / limit) * 100);
+    bar.style.width = pct + '%';
+    if (pct >= 80) bar.classList.add('warning');
+    else bar.classList.remove('warning');
+  }
+}
+
 // ── 앱 시작시 남은 횟수 조회 ──
 async function loadCounter() {
   const uid = getUserId();
@@ -722,15 +735,6 @@ async function loadCounter() {
 }
 
 function incrementScanCount() { /* 서버에서 처리 */ }
-
-function incrementScanCount() {
-  const uid = getUserId();
-  const key = 'scan_count_' + uid + '_' + new Date().toISOString().slice(0,7);
-  const count = parseInt(localStorage.getItem(key) || '0') + 1;
-  localStorage.setItem(key, count);
-  updateCounter(count, 150);
- return count;
-}
 
 window.addEventListener('DOMContentLoaded', loadCounter);
 
