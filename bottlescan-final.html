@@ -703,26 +703,25 @@ function getUserId() {
   return uid;
 }
 
-// ── 카운터 UI 업데이트 ──
-function updateCounter(used, limit) {
-  const el = document.getElementById('counter-used');
-  const bar = document.getElementById('counter-bar');
-  if (el) el.textContent = used;
-  if (bar) {
-    const pct = Math.min(100, (used / limit) * 100);
-    bar.style.width = pct + '%';
-    if (pct >= 80) bar.classList.add('warning');
-    else bar.classList.remove('warning');
-  }
-}
-
 // ── 앱 시작시 남은 횟수 조회 ──
 async function loadCounter() {
   const uid = getUserId();
-  const key = 'scan_count_' + uid + '_' + new Date().toISOString().slice(0,7);
-  const used = parseInt(localStorage.getItem(key) || '0');
-  updateCounter(used, 150);
+  try {
+    const res = await fetch(`/api/counter?userId=${encodeURIComponent(uid)}`);
+    if (res.ok) {
+      const data = await res.json();
+      updateCounter(data.barcode.used, data.barcode.limit);
+      const badge = document.getElementById('image-counter-badge');
+      if (badge) badge.textContent = `이미지 ${data.image.used}/20`;
+    }
+  } catch (e) {
+    const key = 'scan_count_' + uid + '_' + new Date().toISOString().slice(0,7);
+    const used = parseInt(localStorage.getItem(key) || '0');
+    updateCounter(used, 150);
+  }
 }
+
+function incrementScanCount() { /* 서버에서 처리 */ }
 
 function incrementScanCount() {
   const uid = getUserId();
@@ -893,7 +892,12 @@ function incrementImageCount() {
 }
 
 async function startImageScanner() {
-  const used = getImageCount();
+  const uid = getUserId();
+  let used = 0;
+  try {
+    const res = await fetch(`/api/counter?userId=${encodeURIComponent(uid)}`);
+    if (res.ok) { const d = await res.json(); used = d.image.used; }
+  } catch (e) {}
   if (used >= 20) {
     alert('이번 달 라벨 스캔 20회를 모두 사용했어요.\n다음 달 1일에 초기화돼요.');
     return;
